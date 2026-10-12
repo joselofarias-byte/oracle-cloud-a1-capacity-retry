@@ -24,3 +24,6 @@ env/
 htmlcov/
 logs/
 .DS_Store
+
+*.estado
+*.lock

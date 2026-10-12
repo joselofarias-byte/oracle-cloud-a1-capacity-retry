@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only OCI capacity checker for an Always Free Ampere A1 Flex VM.
+"""Consulta de capacidad OCI para Ampere A1 Flex, sin crear instancias.
 
 The tenancy, region, shape, availability domains, and OCI profile are loaded
 from .env. This tool only requests capacity reports; it never creates,
@@ -31,7 +31,7 @@ def load_env_file(path: Path) -> None:
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except OSError as exc:
-        raise ValueError(f"Cannot read .env: {path}: {exc}") from exc
+        raise ValueError(f"No se pudo leer .env: {path}: {exc}") from exc
 
     for raw_line in lines:
         line = raw_line.strip()
@@ -55,7 +55,7 @@ def load_env_file(path: Path) -> None:
 def required_env(name: str) -> str:
     value = os.environ.get(name, "").strip()
     if not value:
-        raise ValueError(f"{name} is missing or empty in .env")
+        raise ValueError(f"{name} falta o está vacío en .env")
     return value
 
 
@@ -86,7 +86,7 @@ def load_settings() -> Settings:
     if not oci_bin and Path("/opt/homebrew/bin/oci").is_file():
         oci_bin = "/opt/homebrew/bin/oci"
     if not oci_bin:
-        raise ValueError("OCI CLI was not found in PATH or OCI_BIN")
+        raise ValueError("No se encontró OCI CLI en PATH o OCI_BIN")
 
     domains = tuple(
         item.strip()
@@ -94,16 +94,16 @@ def load_settings() -> Settings:
         if item.strip()
     )
     if not domains:
-        raise ValueError("ADS in .env does not contain an availability domain")
+        raise ValueError("ADS no contiene dominios de disponibilidad")
 
     try:
         ocpus = float(required_env("OCPUS"))
         memory_gib = float(required_env("MEMORY_GB"))
         timeout_seconds = int(os.environ.get("OCI_READ_TIMEOUT", "30"))
     except ValueError as exc:
-        raise ValueError("OCPUS, MEMORY_GB, and OCI_READ_TIMEOUT must be numbers") from exc
+        raise ValueError("OCPUS, MEMORY_GB y OCI_READ_TIMEOUT deben ser números") from exc
     if ocpus <= 0 or memory_gib <= 0 or timeout_seconds <= 0:
-        raise ValueError("OCPUS, MEMORY_GB, and OCI_READ_TIMEOUT must be greater than zero")
+        raise ValueError("OCPUS, MEMORY_GB y OCI_READ_TIMEOUT deben ser positivos")
 
     return Settings(
         tenancy_name=required_env("TENANCY_NAME"),
@@ -122,7 +122,7 @@ def load_settings() -> Settings:
 
 def settings() -> Settings:
     if SETTINGS is None:
-        raise RuntimeError("Configuration was not loaded")
+        raise RuntimeError("No se cargó la configuración")
     return SETTINGS
 
 
@@ -182,10 +182,10 @@ def extract_shape_availability(payload: dict[str, Any]) -> dict[str, Any]:
             data.get("shape-availabilities", data.get("shape_availabilities", [])),
         )
     if not entries:
-        raise ValueError("OCI returned an empty capacity report")
+        raise ValueError("OCI devolvió un informe de capacidad vacío")
     entry = entries[0]
     if not isinstance(entry, dict):
-        raise ValueError("OCI returned an invalid capacity report")
+        raise ValueError("OCI devolvió un informe inválido")
     return entry
 
 
@@ -221,14 +221,14 @@ def check_domain(availability_domain: str) -> dict[str, Any]:
             "availability_domain": availability_domain,
             "available": None,
             "status": "ERROR",
-            "error": "OCI CLI was not found",
+            "error": "No se encontró OCI CLI",
         }
     except subprocess.TimeoutExpired:
         return {
             "availability_domain": availability_domain,
             "available": None,
             "status": "TIMEOUT",
-            "error": f"OCI call timed out after {current.timeout_seconds}s",
+            "error": f"La consulta OCI agotó su tiempo después de {current.timeout_seconds}s",
         }
 
     if completed.returncode != 0:
@@ -237,7 +237,7 @@ def check_domain(availability_domain: str) -> dict[str, Any]:
             "availability_domain": availability_domain,
             "available": None,
             "status": "ERROR",
-            "error": error[-1200:] or f"OCI CLI exit code {completed.returncode}",
+            "error": error[-1200:] or f"Código de salida OCI {completed.returncode}",
         }
 
     try:
@@ -250,12 +250,15 @@ def check_domain(availability_domain: str) -> dict[str, Any]:
             "error": str(exc),
         }
 
+    status = entry.get("availability-status", entry.get("availabilityStatus"))
     available = entry.get("available")
+    if status == "AVAILABLE": available = True
+    elif status == "OUT_OF_HOST_CAPACITY": available = False
     shape_config = entry.get("instanceShapeConfig", entry.get("instance-shape-config", {}))
     return {
         "availability_domain": availability_domain,
         "available": available,
-        "status": "AVAILABLE" if available is True else "FULL" if available is False else "UNKNOWN",
+        "status": "AVAILABLE" if available is True else "OUT_OF_HOST_CAPACITY" if available is False else "UNKNOWN",
         "shape": entry.get("instanceShape", settings().shape),
         "ocpus": shape_config.get("ocpus", settings().ocpus),
         "memory_gib": shape_config.get("memoryInGBs", settings().memory_gib),
@@ -284,25 +287,25 @@ def parse_args() -> argparse.Namespace:
         "--env-file",
         type=Path,
         default=None,
-        help=".env path (default: ENV_FILE or .env next to this script)",
+        help="Ruta .env (predeterminada: ENV_FILE o junto al script)",
     )
     parser.add_argument(
         "--config-file",
         type=Path,
         default=None,
-        help="override OCI config path after loading .env",
+        help="Usar otra ruta de configuración OCI",
     )
     parser.add_argument(
         "--profile",
         default=None,
-        help="override OCI profile after loading .env",
+        help="Usar otro perfil OCI",
     )
-    parser.add_argument("--timeout", type=int, default=None, help="per-domain timeout in seconds")
-    parser.add_argument("--watch", action="store_true", help="repeat until Ctrl-C")
-    parser.add_argument("--interval", type=int, default=30, help="seconds between watch cycles")
-    parser.add_argument("--stop-when-available", action="store_true", help="stop on first available domain")
-    parser.add_argument("--json", action="store_true", help="print machine-readable JSON")
-    parser.add_argument("--dry-run", action="store_true", help="print read-only OCI commands without calling OCI")
+    parser.add_argument("--timeout", type=int, default=None, help="Tiempo máximo por dominio en segundos")
+    parser.add_argument("--watch", action="store_true", help="Repetir hasta Ctrl+C")
+    parser.add_argument("--interval", type=int, default=30, help="Segundos entre ciclos")
+    parser.add_argument("--stop-when-available", action="store_true", help="Detener al encontrar capacidad")
+    parser.add_argument("--json", action="store_true", help="Mostrar JSON")
+    parser.add_argument("--dry-run", action="store_true", help="Mostrar comandos sin consultar OCI")
     return parser.parse_args()
 
 
@@ -311,13 +314,13 @@ def main() -> int:
 
     args = parse_args()
     if args.interval <= 0:
-        print("--interval must be greater than zero", file=sys.stderr)
+        print("--interval debe ser positivo", file=sys.stderr)
         return 2
 
     env_file = args.env_file or Path(os.environ.get("ENV_FILE", PROJECT_DIR / ".env"))
     env_file = env_file.expanduser()
     if not env_file.is_file():
-        print(f".env was not found: {env_file}. Copy .env.example to .env.", file=sys.stderr)
+        print(f"No se encontró .env: {env_file}. Copiá .env.example a .env.", file=sys.stderr)
         return 2
 
     try:
@@ -328,11 +331,11 @@ def main() -> int:
             os.environ["OCI_PROFILE"] = args.profile
         if args.timeout is not None:
             if args.timeout <= 0:
-                raise ValueError("--timeout must be greater than zero")
+                raise ValueError("--timeout debe ser positivo")
             os.environ["OCI_READ_TIMEOUT"] = str(args.timeout)
         SETTINGS = load_settings()
     except ValueError as exc:
-        print(f"Configuration error: {exc}", file=sys.stderr)
+        print(f"Error de configuración: {exc}", file=sys.stderr)
         return 2
 
     current = settings()
@@ -344,8 +347,8 @@ def main() -> int:
     selected_tenancy = configured_tenancy(current.config_file, current.profile)
     if selected_tenancy != current.compartment_ocid:
         print(
-            "The OCI config does not belong to the tenancy in .env "
-            f"({current.tenancy_name}). Check OCI_CONFIG_FILE/OCI_PROFILE.",
+            "La configuración OCI no corresponde a la cuenta de .env "
+            f"({current.tenancy_name}). Revisá OCI_CONFIG_FILE/OCI_PROFILE.",
             file=sys.stderr,
         )
         return 2
@@ -363,7 +366,7 @@ def main() -> int:
                 return 0 if any(item["status"] != "ERROR" for item in results) else 1
             time.sleep(args.interval)
     except KeyboardInterrupt:
-        print("\nInterrupted.")
+        print("\nInterrumpido.")
         return 130
 
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # =============================================================================
 # OCI Always Free A1.Flex capacity retry
 # =============================================================================
@@ -6,13 +6,14 @@
 # Keep .env private; it is intentionally excluded from Git.
 # =============================================================================
 
+umask 077
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="${ENV_FILE:-$SCRIPT_DIR/.env}"
 DRY_RUN_OVERRIDE="${DRY_RUN:-}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "ERROR: .env was not found: $ENV_FILE"
-  echo "Copy .env.example to .env and fill in the OCI configuration."
+  echo "ERROR: No se encontró .env: $ENV_FILE"
+  echo "Copiá .env.example a .env y completá la configuración OCI."
   exit 1
 fi
 
@@ -26,31 +27,31 @@ if [[ -n "$DRY_RUN_OVERRIDE" ]]; then
   DRY_RUN="$DRY_RUN_OVERRIDE"
 fi
 
-: "${TENANCY_NAME:?TENANCY_NAME is missing in .env}"
-: "${COMPARTMENT_ID:?COMPARTMENT_ID is missing in .env}"
-: "${OCI_CONFIG_FILE:?OCI_CONFIG_FILE is missing in .env}"
-: "${OCI_PROFILE:?OCI_PROFILE is missing in .env}"
-: "${SSH_KEY_FILE:?SSH_KEY_FILE is missing in .env}"
-: "${DISPLAY_NAME:?DISPLAY_NAME is missing in .env}"
-: "${SHAPE:?SHAPE is missing in .env}"
-: "${OCPUS:?OCPUS is missing in .env}"
-: "${MEMORY_GB:?MEMORY_GB is missing in .env}"
-: "${TOTAL_OCPU_LIMIT:?TOTAL_OCPU_LIMIT is missing in .env}"
-: "${TOTAL_MEMORY_LIMIT:?TOTAL_MEMORY_LIMIT is missing in .env}"
-: "${SLEEP_SECONDS:?SLEEP_SECONDS is missing in .env}"
-: "${MAX_RETRY_DELAY_SECONDS:?MAX_RETRY_DELAY_SECONDS is missing in .env}"
-: "${CAPACITY_REQUEST_DELAY_SECONDS:?CAPACITY_REQUEST_DELAY_SECONDS is missing in .env}"
-: "${OCI_READ_TIMEOUT:?OCI_READ_TIMEOUT is missing in .env}"
-: "${OCI_NO_RETRY:?OCI_NO_RETRY is missing in .env}"
-: "${IMAGE_OS:?IMAGE_OS is missing in .env}"
-: "${IMAGE_OS_VERSION:?IMAGE_OS_VERSION is missing in .env}"
-: "${ASSIGN_PUBLIC_IP:?ASSIGN_PUBLIC_IP is missing in .env}"
-: "${LAUNCH_WAIT_STATE:?LAUNCH_WAIT_STATE is missing in .env}"
-: "${LAUNCH_MAX_WAIT_SECONDS:?LAUNCH_MAX_WAIT_SECONDS is missing in .env}"
-: "${NETWORK_RECHECK_DELAYS:?NETWORK_RECHECK_DELAYS is missing in .env}"
-: "${REGION:?REGION is missing in .env}"
-: "${LOCK_FILE:?LOCK_FILE is missing in .env}"
-: "${ADS:?ADS is missing in .env}"
+: "${TENANCY_NAME:?TENANCY_NAME falta en .env}"
+: "${COMPARTMENT_ID:?COMPARTMENT_ID falta en .env}"
+: "${OCI_CONFIG_FILE:?OCI_CONFIG_FILE falta en .env}"
+: "${OCI_PROFILE:?OCI_PROFILE falta en .env}"
+: "${SSH_KEY_FILE:?SSH_KEY_FILE falta en .env}"
+: "${DISPLAY_NAME:?DISPLAY_NAME falta en .env}"
+: "${SHAPE:?SHAPE falta en .env}"
+: "${OCPUS:?OCPUS falta en .env}"
+: "${MEMORY_GB:?MEMORY_GB falta en .env}"
+: "${TOTAL_OCPU_LIMIT:?TOTAL_OCPU_LIMIT falta en .env}"
+: "${TOTAL_MEMORY_LIMIT:?TOTAL_MEMORY_LIMIT falta en .env}"
+: "${SLEEP_SECONDS:?SLEEP_SECONDS falta en .env}"
+: "${MAX_RETRY_DELAY_SECONDS:?MAX_RETRY_DELAY_SECONDS falta en .env}"
+: "${CAPACITY_REQUEST_DELAY_SECONDS:?CAPACITY_REQUEST_DELAY_SECONDS falta en .env}"
+: "${OCI_READ_TIMEOUT:?OCI_READ_TIMEOUT falta en .env}"
+: "${OCI_NO_RETRY:?OCI_NO_RETRY falta en .env}"
+: "${IMAGE_OS:?IMAGE_OS falta en .env}"
+: "${IMAGE_OS_VERSION:?IMAGE_OS_VERSION falta en .env}"
+: "${ASSIGN_PUBLIC_IP:?ASSIGN_PUBLIC_IP falta en .env}"
+: "${LAUNCH_WAIT_STATE:?LAUNCH_WAIT_STATE falta en .env}"
+: "${LAUNCH_MAX_WAIT_SECONDS:?LAUNCH_MAX_WAIT_SECONDS falta en .env}"
+: "${NETWORK_RECHECK_DELAYS:?NETWORK_RECHECK_DELAYS falta en .env}"
+: "${REGION:?REGION falta en .env}"
+: "${LOCK_FILE:?LOCK_FILE falta en .env}"
+: "${ADS:?ADS falta en .env}"
 
 SUBNET_ID="${SUBNET_ID:-}"
 IMAGE_ID="${IMAGE_ID:-}"
@@ -73,16 +74,16 @@ IFS=',' read -r -a RECHECK_DELAYS <<< "$NETWORK_RECHECK_DELAYS"
 IFS=',' read -r -a NTP_SERVER_LIST <<< "$NTP_SERVERS"
 
 if (( ${#ADS[@]} == 0 )); then
-  echo "ERROR: ADS is empty in .env."
+  echo "ERROR: ADS está vacío en .env."
   exit 1
 fi
 
 if [[ "$LOG_TO_FILE" != "0" && "$LOG_TO_FILE" != "1" ]]; then
-  echo "ERROR: LOG_TO_FILE must be 0 or 1."
+  echo "ERROR: LOG_TO_FILE debe ser 0 o 1."
   exit 1
 fi
 if ! [[ "$LOG_RETENTION_DAYS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: LOG_RETENTION_DAYS must be a positive integer."
+  echo "ERROR: LOG_RETENTION_DAYS debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$LOG_PREFIX" =~ ^[A-Za-z0-9._-]+$ ]]; then
@@ -90,19 +91,19 @@ if ! [[ "$LOG_PREFIX" =~ ^[A-Za-z0-9._-]+$ ]]; then
   exit 1
 fi
 if [[ "$NTP_CHECK_ENABLED" != "0" && "$NTP_CHECK_ENABLED" != "1" ]]; then
-  echo "ERROR: NTP_CHECK_ENABLED must be 0 or 1."
+  echo "ERROR: NTP_CHECK_ENABLED debe ser 0 o 1."
   exit 1
 fi
 if ! [[ "$NTP_MAX_OFFSET_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: NTP_MAX_OFFSET_SECONDS must be a positive integer."
+  echo "ERROR: NTP_MAX_OFFSET_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$NTP_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: NTP_TIMEOUT_SECONDS must be a positive integer."
+  echo "ERROR: NTP_TIMEOUT_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$NTP_RETRY_DELAY_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: NTP_RETRY_DELAY_SECONDS must be a positive integer."
+  echo "ERROR: NTP_RETRY_DELAY_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if [[ "$NTP_CHECK_ENABLED" == "1" ]]; then
@@ -112,7 +113,7 @@ if [[ "$NTP_CHECK_ENABLED" == "1" ]]; then
   fi
   for ntp_server in "${NTP_SERVER_LIST[@]}"; do
     if [[ ! "$ntp_server" =~ ^[A-Za-z0-9][A-Za-z0-9._:-]*$ ]]; then
-      echo "ERROR: Invalid NTP server name: $ntp_server"
+      echo "ERROR: Invalid Servidor NTP name: $ntp_server"
       exit 1
     fi
   done
@@ -133,13 +134,13 @@ rotate_log_if_needed() {
   today="$(date '+%Y-%m-%d')"
   if [[ -z "$LOG_DAY" || "$today" != "$LOG_DAY" ]]; then
     mkdir -p "$LOG_DIR" || {
-      echo "ERROR: Could not create log directory: $LOG_DIR"
+      echo "ERROR: No se pudo crear la carpeta de registros: $LOG_DIR"
       exit 1
     }
     LOG_DAY="$today"
     LOG_FILE="$LOG_DIR/${LOG_PREFIX}-${LOG_DAY}.log"
     exec >> "$LOG_FILE" 2>&1
-    echo "Logging to $LOG_FILE; retaining logs for $LOG_RETENTION_DAYS day(s)."
+    echo "Registro en $LOG_FILE; conservando registros durante $LOG_RETENTION_DAYS day(s)."
   fi
 
   prune_old_logs
@@ -147,29 +148,32 @@ rotate_log_if_needed() {
 
 rotate_log_if_needed
 
-if [[ -f "$LOCK_FILE" ]]; then
-  OLD_PID=$(cat "$LOCK_FILE")
-  if kill -0 "$OLD_PID" 2>/dev/null; then
-    echo "ERROR: The script is already running (PID $OLD_PID). Stopping to avoid duplicate instances."
-    exit 1
-  else
-    rm -f "$LOCK_FILE"
-  fi
+mkdir -p "$(dirname "$LOCK_FILE")" || exit 1
+exec 9>"$LOCK_FILE" || exit 1
+flock -n 9 || { echo "ERROR: Ya hay otro proceso activo para esta cuenta."; exit 1; }
+STATE_FILE="${STATE_FILE:-${ENV_FILE}.estado}"
+if [[ "$DRY_RUN" != "1" && -s "$STATE_FILE" ]]; then
+  echo "Proceso detenido: existe un resultado anterior en $STATE_FILE."
+  echo "Revisá la consola antes de retirar ese archivo."
+  exit 1
 fi
-echo $$ > "$LOCK_FILE"
-trap 'rm -f "$LOCK_FILE"' EXIT
+
+python3 -c 'import sys,math; a=list(map(float,sys.argv[1:])); assert all(math.isfinite(v) and v>0 for v in a); assert a[0]<=a[2]<=2 and a[1]<=a[3]<=12' "$OCPUS" "$MEMORY_GB" "$TOTAL_OCPU_LIMIT" "$TOTAL_MEMORY_LIMIT" || { echo "ERROR: tamaños A1 inválidos; límite total 2 OCPU / 12 GB."; exit 1; }
+if [[ "$SHAPE" != "VM.Standard.A1.Flex" ]]; then
+  echo "ERROR: esta adaptación admite únicamente VM.Standard.A1.Flex."; exit 1
+fi
 
 if [[ "$DRY_RUN" == "1" ]]; then
-  echo "DRY RUN: tenancy $TENANCY_NAME | region $REGION"
-  echo "DRY RUN: shape $SHAPE | ${OCPUS} OCPU / ${MEMORY_GB} GB"
-  echo "DRY RUN: OCI config $OCI_CONFIG_FILE"
-  printf 'DRY RUN: AD %s\n' "${ADS[@]}"
+  echo "SIMULACIÓN: cuenta $TENANCY_NAME | region $REGION"
+  echo "SIMULACIÓN: shape $SHAPE | ${OCPUS} OCPU / ${MEMORY_GB} GB"
+  echo "SIMULACIÓN: OCI config $OCI_CONFIG_FILE"
+  printf 'SIMULACIÓN: AD %s\n' "${ADS[@]}"
   exit 0
 fi
 
 if [[ ! -f "$OCI_CONFIG_FILE" ]]; then
-  echo "ERROR: OCI config for tenancy $TENANCY_NAME was not found: $OCI_CONFIG_FILE"
-  echo "Create an API key/profile and set OCI_CONFIG_FILE in .env."
+  echo "ERROR: Configuración OCI de cuenta $TENANCY_NAME no encontrada: $OCI_CONFIG_FILE"
+  echo "Creá el perfil API y definí OCI_CONFIG_FILE en .env."
   exit 1
 fi
 
@@ -185,7 +189,7 @@ if [[ -z "$OCI_BIN" && -x "/opt/homebrew/bin/oci" ]]; then
 fi
 
 if [[ -z "$OCI_BIN" ]]; then
-  echo "ERROR: OCI CLI was not found in PATH."
+  echo "ERROR: No se encontró OCI CLI en PATH."
   exit 1
 fi
 
@@ -196,23 +200,23 @@ fi
 export SUPPRESS_LABEL_WARNING=True
 
 if ! [[ "$SLEEP_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: SLEEP_SECONDS must be a positive integer."
+  echo "ERROR: SLEEP_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$MAX_RETRY_DELAY_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: MAX_RETRY_DELAY_SECONDS must be a positive integer."
+  echo "ERROR: MAX_RETRY_DELAY_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$CAPACITY_REQUEST_DELAY_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: CAPACITY_REQUEST_DELAY_SECONDS must be a positive integer."
+  echo "ERROR: CAPACITY_REQUEST_DELAY_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$OCI_READ_TIMEOUT" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: OCI_READ_TIMEOUT must be a positive integer."
+  echo "ERROR: OCI_READ_TIMEOUT debe ser un entero positivo."
   exit 1
 fi
 if ! [[ "$LAUNCH_MAX_WAIT_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
-  echo "ERROR: LAUNCH_MAX_WAIT_SECONDS must be a positive integer."
+  echo "ERROR: LAUNCH_MAX_WAIT_SECONDS debe ser un entero positivo."
   exit 1
 fi
 if (( MAX_RETRY_DELAY_SECONDS < SLEEP_SECONDS )); then
@@ -225,24 +229,24 @@ validate_oci_access() {
       --tenancy-id "$COMPARTMENT_ID" \
       --query 'data.name' \
       --raw-output 2>&1); then
-    echo "ERROR: OCI authentication or configuration for tenancy $TENANCY_NAME is invalid."
+    echo "ERROR: Autenticación o configuración OCI de cuenta $TENANCY_NAME inválida."
     echo "$output"
     exit 1
   fi
   tenancy_name="$output"
   if [[ -z "$tenancy_name" || "$tenancy_name" == "null" ]]; then
-    echo "ERROR: OCI returned an empty tenancy name; stopping for safety."
+    echo "ERROR: OCI devolvió un valor vacío para cuenta nombre; proceso detenido."
     exit 1
   fi
-  echo "OCI access confirmed for tenancy: $tenancy_name"
+  echo "Acceso OCI confirmado para cuenta: $cuenta_name"
 }
 
 is_fatal_oci_error() {
-  grep -Eqi 'NotAuthenticated|NotAuthorized|AuthenticationFailed|Authorization failed|InvalidParameter|ConfigFileNotFound|No such file or directory|401|403' <<< "$1"
+  grep -Eqi 'NotAuthenticated|NotAuthorized|AuthenticationFailed|Authorization failed|InvalidParameter|LimitExceeded|ConfigFileNotFound|No such file or directory|401|403' <<< "$1"
 }
 
 is_capacity_error() {
-  grep -Eqi 'OUT_OF_HOST_CAPACITY|OutOfHostCapacity|out of host capacity|OutOfCapacity|capacity unavailable|LimitExceeded' <<< "$1"
+  grep -Eqi 'OUT_OF_HOST_CAPACITY|OutOfHostCapacity|out of host capacity|OutOfCapacity|capacity unavailable' <<< "$1"
 }
 
 is_rate_limit_error() {
@@ -266,7 +270,7 @@ check_ntp_clock() {
     sntp_bin="$(command -v sntp 2>/dev/null || true)"
   fi
   if [[ -z "$sntp_bin" ]]; then
-    echo "ERROR: sntp was not found; pausing until the system clock can be checked against public NTP."
+    echo "ERROR: No se encontró sntp; se pausa la comprobación externa del reloj."
     return 1
   fi
 
@@ -274,35 +278,35 @@ check_ntp_clock() {
     if ntp_output=$("$sntp_bin" -t "$NTP_TIMEOUT_SECONDS" "$ntp_server" 2>&1); then
       offset="$(printf '%s\n' "$ntp_output" | awk '$1 ~ /^[+-]?[0-9]+([.][0-9]+)?$/ { print $1; exit }')"
       if [[ -z "$offset" ]]; then
-        echo "WARNING: NTP server $ntp_server returned an unreadable offset."
+        echo "WARNING: Servidor NTP $ntp_server devolvió un desfase ilegible."
         continue
       fi
 
       absolute_offset="$(awk -v value="$offset" 'BEGIN { if (value < 0) value = -value; print value }')"
       if awk -v offset="$absolute_offset" -v maximum="$NTP_MAX_OFFSET_SECONDS" 'BEGIN { exit !(offset <= maximum) }'; then
-        echo "NTP check passed: $ntp_server; measured offset ${offset}s."
+        echo "Reloj NTP verificado: $ntp_server; desfase medido ${offset}s."
         return 0
       fi
 
       unsafe_response=1
-      echo "WARNING: System clock offset is ${offset}s according to $ntp_server; trying the next NTP server."
+      echo "WARNING: Desfase del reloj: ${offset}s según $ntp_server; trying the next Servidor NTP."
       continue
     fi
 
-    echo "WARNING: NTP server $ntp_server could not be reached: $(printf '%s\n' "$ntp_output" | head -1)"
+    echo "WARNING: Servidor NTP $ntp_server no respondió: $(printf '%s\n' "$ntp_output" | head -1)"
   done
 
   if (( unsafe_response )); then
-    echo "ERROR: No configured NTP server reported a safe clock offset."
+    echo "ERROR: No configured Servidor NTP reported a safe clock offset."
   else
-    echo "ERROR: No configured NTP server responded with a readable clock offset."
+    echo "ERROR: No configured Servidor NTP responded with a readable clock offset."
   fi
   return 1
 }
 
 wait_for_ntp_clock() {
   while ! check_ntp_clock; do
-    echo "WARNING: NTP is not currently safe; keeping the script alive and retrying in ${NTP_RETRY_DELAY_SECONDS}s."
+    echo "WARNING: No se verificó el reloj; reintentando en ${NTP_RETRY_DELAY_SECONDS}s."
     sleep "$NTP_RETRY_DELAY_SECONDS"
   done
 }
@@ -349,16 +353,16 @@ if [[ -z "$IMAGE_ID" ]]; then
 fi
 
 if [[ -z "$SUBNET_ID" || "$SUBNET_ID" == "null" ]]; then
-  echo "ERROR: No available subnet was found in the root compartment."
+  echo "ERROR: No se encontró una subred disponible en el compartimento raíz."
   exit 1
 fi
 if [[ -z "$IMAGE_ID" || "$IMAGE_ID" == "null" ]]; then
-  echo "ERROR: No available Oracle Linux 9 image was found for A1.Flex."
+  echo "ERROR: No se encontró una imagen Oracle Linux 9 para A1.Flex."
   exit 1
 fi
 
 if [[ ! -f "$SSH_KEY_FILE" ]]; then
-  echo "ERROR: SSH public key was not found at $SSH_KEY_FILE"
+  echo "ERROR: No se encontró la clave pública SSH en $SSH_KEY_FILE"
   exit 1
 fi
 
@@ -369,7 +373,10 @@ notify() {
   if command -v osascript >/dev/null 2>&1; then
     osascript -e "display notification \"${message}\" with title \"${title}\" sound name \"Glass\"" 2>/dev/null
   fi
-  echo "[NOTIFICATION] ${title}: ${message}"
+  if command -v termux-notification >/dev/null 2>&1; then
+    termux-notification --title "$title" --content "$message" 2>/dev/null || true
+  fi
+  echo "[NOTIFICACIÓN] ${title}: ${message}"
 }
 
 # --- Check the capacity report before a launch attempt ---
@@ -398,26 +405,28 @@ check_totals() {
     return 1
   fi
   if [[ -z "$json" || "$json" == "null" ]]; then
-    echo "0 0"
-    return
+    echo "ERROR: OCI devolvió una lista de uso vacía o nula." >&2
+    return 1
   fi
-  local total_ocpu total_mem
-  total_ocpu=$(echo "$json" | python3 -c "import json,sys; data=json.load(sys.stdin); print(sum(d.get('ocpus',0) or 0 for d in data))" 2>/dev/null)
-  total_mem=$(echo "$json" | python3 -c "import json,sys; data=json.load(sys.stdin); print(sum(d.get('mem',0) or 0 for d in data))" 2>/dev/null)
-  echo "${total_ocpu:-0} ${total_mem:-0}"
+  printf '%s' "$json" | python3 -c '
+import json,sys,math
+rows=json.load(sys.stdin)
+if not isinstance(rows,list): raise ValueError("Lista de instancias inválida")
+totals=[sum(float(row[key]) for row in rows) for key in ("ocpus","mem")]
+if not all(math.isfinite(v) and v >= 0 for v in totals): raise ValueError("Uso inválido")
+print(*totals)
+'
+
 }
 
 echo "=========================================="
-echo "Starting automatic A1.Flex retry ($OCPUS OCPU / ${MEMORY_GB}GB per attempt)"
-echo "Total target: $TOTAL_OCPU_LIMIT OCPU / ${TOTAL_MEMORY_LIMIT}GB (sum of all A1 instances)"
-echo "Region: $REGION | Delay: ${SLEEP_SECONDS}s | Capacity-call delay: ${CAPACITY_REQUEST_DELAY_SECONDS}s | Stop with Ctrl+C"
+echo "Iniciando reintentos automáticos A1.Flex ($OCPUS OCPU / ${MEMORY_GB}GB por intento)"
+echo "Límite total: $TOTAL_OCPU_LIMIT OCPU / ${TOTAL_MEMORY_LIMIT}GB (suma de instancias A1 del compartimento)"
+echo "Región: $REGION | Espera: ${SLEEP_SECONDS}s | Espera entre consultas: ${CAPACITY_REQUEST_DELAY_SECONDS}s | Detener con Ctrl+C"
 echo "=========================================="
 
 target_reached() {
-  local current_ocpu="$1"
-  local current_mem="$2"
-  (( $(echo "$current_ocpu >= $TOTAL_OCPU_LIMIT" | bc -l 2>/dev/null || echo 0) )) || \
-    (( $(echo "$current_mem >= $TOTAL_MEMORY_LIMIT" | bc -l 2>/dev/null || echo 0) ))
+  python3 -c 'import sys; c,m,lc,lm=map(float,sys.argv[1:]); sys.exit(0 if c>=lc or m>=lm else 1)' "$1" "$2" "$TOTAL_OCPU_LIMIT" "$TOTAL_MEMORY_LIMIT"
 }
 
 attempt=0
@@ -427,28 +436,28 @@ while true; do
   rotate_log_if_needed
 
   if ! check_ntp_clock; then
-    echo "[$(date '+%H:%M:%S')] WARNING: NTP is not currently safe; pausing OCI calls and retrying in ${NTP_RETRY_DELAY_SECONDS}s."
+    echo "[$(date '+%H:%M:%S')] AVISO: no se verificó el reloj; pausando OCI y reintentando en ${NTP_RETRY_DELAY_SECONDS}s."
     sleep "$NTP_RETRY_DELAY_SECONDS"
     continue
   fi
 
   if ! CURRENT_TOTALS="$(check_totals)"; then
-    echo "[$(date '+%H:%M:%S')] ERROR: Cannot check existing A1.Flex instances; stopping to avoid a duplicate."
-    notify "Oracle Cloud - ERROR" "The existing-instance check failed. The script was stopped."
+    echo "[$(date '+%H:%M:%S')] ERROR: No se pudo consultar el uso A1; proceso detenido."
+    notify "Oracle Cloud - ERROR" "Falló la consulta de instancias existentes."
     exit 1
   fi
   read -r CUR_OCPU CUR_MEM <<< "$CURRENT_TOTALS"
   CUR_OCPU="${CUR_OCPU:-0}"
   CUR_MEM="${CUR_MEM:-0}"
 
-  echo "[$(date '+%H:%M:%S')] Current total: ${CUR_OCPU} OCPU / ${CUR_MEM}GB (target: ${TOTAL_OCPU_LIMIT}/${TOTAL_MEMORY_LIMIT})"
+  echo "[$(date '+%H:%M:%S')] Uso actual: ${CUR_OCPU} OCPU / ${CUR_MEM}GB (límite: ${TOTAL_OCPU_LIMIT}/${TOTAL_MEMORY_LIMIT})"
 
   if target_reached "$CUR_OCPU" "$CUR_MEM"; then
     echo "=========================================="
-    echo "TARGET REACHED! Total usage of ${CUR_OCPU} OCPU / ${CUR_MEM}GB is at or above the limit."
-    echo "Stopping the script; no additional instances will be created."
+    echo "LÍMITE ALCANZADO. El uso de ${CUR_OCPU} OCPU / ${CUR_MEM}GB alcanzó el límite."
+    echo "Proceso finalizado."
     echo "=========================================="
-    notify "Oracle Cloud - Complete" "Limit reached: ${CUR_OCPU} OCPU / ${CUR_MEM}GB. The script was stopped."
+    notify "Oracle Cloud - Completado" "Límite alcanzado: ${CUR_OCPU} OCPU / ${CUR_MEM}GB. Proceso detenido."
     exit 0
   fi
 
@@ -459,6 +468,15 @@ while true; do
   launch_uncertain=0
   capacity_checks=0
 
+  BASE_OCPUS="$OCPUS"
+  BASE_MEMORY="$MEMORY_GB"
+  SIZES=("$BASE_OCPUS/$BASE_MEMORY")
+  [[ "${TRY_SMALLER:-1}" == "1" && "$BASE_OCPUS/$BASE_MEMORY" != "1/6" ]] && SIZES+=("1/6")
+  for size in "${SIZES[@]}"; do
+    IFS=/ read -r OCPUS MEMORY_GB <<< "$size"
+    if ! python3 -c 'import sys; c,m,o,r,lc,lm=map(float,sys.argv[1:]); sys.exit(0 if c+o<=lc and m+r<=lm else 1)' "$CUR_OCPU" "$CUR_MEM" "$OCPUS" "$MEMORY_GB" "$TOTAL_OCPU_LIMIT" "$TOTAL_MEMORY_LIMIT"; then
+      continue
+    fi
   # Check every AD without waiting between them; wait only after the full cycle.
   for ad_suffix in "${ADS[@]}"; do
     attempt=$((attempt + 1))
@@ -474,13 +492,13 @@ while true; do
     CAPACITY_STATUS="$(printf '%s\n' "$CAPACITY_OUTPUT" | awk 'NF { line=$0 } END { print line }' | tr -d '\r')"
 
     if (( CAPACITY_EXIT != 0 )); then
-      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: capacity report failed:"
+      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: falló el informe de capacidad:"
       echo "$CAPACITY_OUTPUT" | head -20
       if is_rate_limit_error "$CAPACITY_OUTPUT"; then
-        echo "[$(date '+%H:%M:%S')] OCI rate limit; increasing the delay before the next cycle."
+        echo "[$(date '+%H:%M:%S')] Límite de frecuencia OCI; aumentando la espera."
         cycle_had_rate_limit=1
       elif is_fatal_oci_error "$CAPACITY_OUTPUT"; then
-        notify "Oracle Cloud - ERROR" "The script was stopped because of OCI authentication or configuration."
+        notify "Oracle Cloud - ERROR" "Proceso detenido por autenticación, configuración o cuota OCI."
         exit 1
       else
         cycle_had_error=1
@@ -489,18 +507,19 @@ while true; do
     fi
 
     if [[ "$CAPACITY_STATUS" == "OUT_OF_HOST_CAPACITY" ]]; then
-      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: no capacity according to the capacity report."
+      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: sin capacidad según el informe."
       cycle_had_capacity=1
       continue
     fi
     if [[ "$CAPACITY_STATUS" != "AVAILABLE" ]]; then
-      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: capacity status=${CAPACITY_STATUS:-UNKNOWN}; skipping launch."
+      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: estado de capacidad=${CAPACITY_STATUS:-UNKNOWN}; se omite el lanzamiento."
       cycle_had_error=1
       continue
     fi
 
-    echo "[$(date '+%H:%M:%S')] Attempt #${attempt} - ${AD_FULL} (capacity AVAILABLE) ..."
+    echo "[$(date '+%H:%M:%S')] Intento #${attempt} - ${AD_FULL} (capacity AVAILABLE) ..."
 
+    printf 'PENDIENTE %s %s %s/%s\n' "$(date -u +%FT%TZ)" "$AD_FULL" "$OCPUS" "$MEMORY_GB" > "$STATE_FILE" || exit 1
     RESULT="$("${OCI[@]}" compute instance launch \
       --compartment-id "$COMPARTMENT_ID" \
       --availability-domain "$AD_FULL" \
@@ -521,57 +540,37 @@ while true; do
 
     if (( LAUNCH_EXIT == 0 )); then
       if [[ -z "$INSTANCE_ID" ]]; then
-        echo "[$(date '+%H:%M:%S')] OCI launch finished without an instance OCID; no blind second launch will be attempted."
+        echo "[$(date '+%H:%M:%S')] El lanzamiento no devolvió OCID; no se repetirá sin revisión."
         echo "$RESULT" | head -20
         launch_uncertain=1
         break
       fi
 
-      echo ""
-      echo "=========================================="
-      echo "SUCCESS! The instance is RUNNING in ${AD_FULL} after ${attempt} attempts."
-      echo "Instance OCID: $INSTANCE_ID"
-      echo "=========================================="
-      notify "Oracle Cloud - Instance created" "New instance in ${AD_FULL} (${OCPUS} OCPU/${MEMORY_GB}GB)."
-
-      if ! NEW_TOTALS="$(check_totals)"; then
-        echo "[$(date '+%H:%M:%S')] The instance was created, but the follow-up usage check failed."
-        notify "Oracle Cloud - Check manually" "The instance was created, but the follow-up usage check failed."
-        exit 1
-      fi
-      read -r NEW_OCPU NEW_MEM <<< "$NEW_TOTALS"
-      NEW_OCPU="${NEW_OCPU:-0}"
-      NEW_MEM="${NEW_MEM:-0}"
-      echo "[$(date '+%H:%M:%S')] New total: ${NEW_OCPU} OCPU / ${NEW_MEM}GB"
-
-      if target_reached "$NEW_OCPU" "$NEW_MEM"; then
-        echo "Total target reached. Stopping the script."
-        notify "Oracle Cloud - Complete" "Total usage is ${NEW_OCPU} OCPU / ${NEW_MEM}GB. Target reached; the script was stopped."
-        exit 0
-      fi
-
-      echo "The target is not complete yet (${NEW_OCPU}/${TOTAL_OCPU_LIMIT} OCPU); continuing after refresh."
-      launch_succeeded=1
-      break
+      printf 'CREADA %s\n' "$INSTANCE_ID" > "$STATE_FILE"
+      notify "Oracle Cloud - Instancia creada" "$INSTANCE_ID"
+      echo "Instancia creada: $INSTANCE_ID. Proceso finalizado."
+      exit 0
     fi
 
     if is_fatal_oci_error "$RESULT"; then
-      echo "[$(date '+%H:%M:%S')] Serious OCI error in ${AD_FULL}:"
+      echo "[$(date '+%H:%M:%S')] Error OCI definitivo en ${AD_FULL}:"
       echo "$RESULT" | head -20
-      notify "Oracle Cloud - ERROR" "The script was stopped because of OCI authentication or configuration."
+      notify "Oracle Cloud - ERROR" "Proceso detenido por autenticación, configuración o cuota OCI."
       exit 1
     elif is_rate_limit_error "$RESULT"; then
-      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: OCI rate limit during the launch request."
+      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: Límite de frecuencia durante el lanzamiento."
+      rm -f "$STATE_FILE"
       cycle_had_rate_limit=1
     elif is_capacity_error "$RESULT"; then
-      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: launch did not receive capacity. Continuing..."
+      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: lanzamiento sin capacidad. Continuando..."
+      rm -f "$STATE_FILE"
       cycle_had_capacity=1
     elif is_network_error "$RESULT"; then
-      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: network problem after the launch request. Checking whether an instance exists..."
+      echo "[$(date '+%H:%M:%S')] ${AD_FULL}: falló la conexión tras el lanzamiento; consultando instancias existentes..."
       for recheck_delay in "${RECHECK_DELAYS[@]}"; do
         sleep "$recheck_delay"
         if ! RECHECK_TOTALS="$(check_totals)"; then
-          echo "[$(date '+%H:%M:%S')] Cannot confirm the state after the network error; no second launch will be attempted."
+          echo "[$(date '+%H:%M:%S')] No se pudo confirmar el resultado; no se repetirá el lanzamiento."
           launch_uncertain=1
           break
         fi
@@ -579,27 +578,36 @@ while true; do
         RECHECK_OCPU="${RECHECK_OCPU:-0}"
         RECHECK_MEM="${RECHECK_MEM:-0}"
         if target_reached "$RECHECK_OCPU" "$RECHECK_MEM" || \
-           (( $(echo "$RECHECK_OCPU > $CUR_OCPU" | bc -l 2>/dev/null || echo 0) )); then
-          echo "The instance WAS created despite the network error. Stopping."
-          notify "Oracle Cloud - Instance created" "An instance was created despite the network error in ${AD_FULL}."
+           python3 -c 'import sys; sys.exit(0 if float(sys.argv[1])>float(sys.argv[2]) else 1)' "$RECHECK_OCPU" "$CUR_OCPU"; then
+          echo "La instancia fue creada pese al error de conexión. Finalizando."
+          notify "Oracle Cloud - Instancia creada" "Se creó una instancia pese al error de conexión en ${AD_FULL}."
           exit 0
         fi
       done
       if (( launch_uncertain == 0 )); then
-        echo "[$(date '+%H:%M:%S')] The instance was not confirmed; waiting before another launch attempt."
+        echo "[$(date '+%H:%M:%S')] No se confirmó la instancia; se conserva el estado para revisión."
         launch_uncertain=1
       fi
       break
     else
-      echo "[$(date '+%H:%M:%S')] Unknown OCI response in ${AD_FULL}; treating it as a temporary error:"
+      echo "[$(date '+%H:%M:%S')] Respuesta OCI desconocida en ${AD_FULL}; se conservará el estado para revisión:"
       echo "$RESULT" | head -10
       cycle_had_error=1
     fi
   done
 
+  [[ -s "$STATE_FILE" ]] && break
+  done
+  OCPUS="$BASE_OCPUS"
+  MEMORY_GB="$BASE_MEMORY"
+  if [[ -s "$STATE_FILE" ]]; then
+    echo "Resultado incierto: revisar Oracle antes de repetir. Estado: $STATE_FILE"
+    exit 2
+  fi
+
   if (( launch_uncertain )); then
     RETRY_DELAY_SECONDS="$SLEEP_SECONDS"
-    echo "[$(date '+%H:%M:%S')] Waiting ${RETRY_DELAY_SECONDS}s before checking the uncertain launch request again..."
+    echo "[$(date '+%H:%M:%S')] Esperando ${RETRY_DELAY_SECONDS}s antes de revisar el lanzamiento incierto..."
     sleep "$RETRY_DELAY_SECONDS"
     continue
   fi
@@ -615,20 +623,20 @@ while true; do
     if (( RETRY_DELAY_SECONDS > MAX_RETRY_DELAY_SECONDS )); then
       RETRY_DELAY_SECONDS="$MAX_RETRY_DELAY_SECONDS"
     fi
-    echo "[$(date '+%H:%M:%S')] OCI rate limit; waiting ${RETRY_DELAY_SECONDS}s before the next cycle."
+    echo "[$(date '+%H:%M:%S')] Límite de frecuencia OCI; esperando ${RETRY_DELAY_SECONDS}s antes del siguiente ciclo."
     sleep "$RETRY_DELAY_SECONDS"
     continue
   fi
 
   if (( cycle_had_error )); then
     RETRY_DELAY_SECONDS="$SLEEP_SECONDS"
-    echo "[$(date '+%H:%M:%S')] The cycle had an error; retrying in ${RETRY_DELAY_SECONDS}s."
+    echo "[$(date '+%H:%M:%S')] Hubo un error; reintentando en ${RETRY_DELAY_SECONDS}s."
     sleep "$RETRY_DELAY_SECONDS"
     continue
   fi
 
   if (( cycle_had_capacity )); then
-    echo "[$(date '+%H:%M:%S')] All checked zones are out of capacity. Waiting ${RETRY_DELAY_SECONDS}s before the next cycle."
+    echo "[$(date '+%H:%M:%S')] Sin capacidad en los dominios consultados. Esperando ${RETRY_DELAY_SECONDS}s antes del siguiente ciclo."
     sleep "$RETRY_DELAY_SECONDS"
     if (( RETRY_DELAY_SECONDS < MAX_RETRY_DELAY_SECONDS )); then
       RETRY_DELAY_SECONDS=$(( RETRY_DELAY_SECONDS * 2 ))

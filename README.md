@@ -1,3 +1,5 @@
+[Versión en español y flujo para Termux](README_ES.md)
+
 # OCI Always Free A1.Flex Capacity Retry
 
 This project monitors OCI Ampere A1 Flex capacity and attempts to launch a VM when OCI reports that capacity is available.
