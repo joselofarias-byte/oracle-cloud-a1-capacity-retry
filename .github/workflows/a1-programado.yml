@@ -1,0 +1,35 @@
+name: Oracle A1 programado
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: oracle-a1-programado
+  cancel-in-progress: false
+jobs:
+  intentar:
+    if: vars.A1_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      A1_ENABLED: ${{ vars.A1_ENABLED }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Comprobar estado persistente
+        id: estado
+        run: python3 actions_a1.py --check-state
+      - name: Instalar SDK Oracle
+        if: steps.estado.outputs.proceed == 'true'
+        run: pip install 'oci==2.187.2'
+      - name: Consultar capacidad y crear si está disponible
+        if: steps.estado.outputs.proceed == 'true'
+        env:
+          OCI_CONFIG: ${{ secrets.OCI_CONFIG }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+          SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+          A1_SUBNET_ID: ${{ vars.A1_SUBNET_ID }}
+          A1_DISPLAY_NAME: ${{ vars.A1_DISPLAY_NAME }}
+        run: python3 actions_a1.py

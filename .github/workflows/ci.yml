@@ -21,10 +21,10 @@ jobs:
           python-version: "3.x"
 
       - name: Validate shell syntax
-        run: bash -n oci_capacity_retry.sh bootstrap_oci_network.sh termux.sh
+        run: bash -n oci_capacity_retry.sh bootstrap_oci_network.sh termux.sh activar-actions.sh
 
       - name: Compile Python
-        run: python -m py_compile oracle_free_tier_checker.py configurar.py
+        run: python -m py_compile oracle_free_tier_checker.py configurar.py actions_a1.py
 
       - name: Run shell dry-run
         env:
@@ -40,4 +40,6 @@ jobs:
         run: python oracle_free_tier_checker.py --env-file .env.example --dry-run
 
       - name: Pruebas de regresión con OCI simulado
-        run: python -m unittest discover -s tests -v
+        run: |
+          pip install oci==2.187.2
+          python -m unittest discover -s tests -v
